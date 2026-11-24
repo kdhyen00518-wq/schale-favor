@@ -262,8 +262,8 @@
     const ready = count >= MIN_PICK;
     el.analyzeBtn.disabled = !ready;
     el.stickyHint.textContent = ready
-      ? "감사 준비 완료! (1번 선택부터 순서대로 미세 가중치 적용)"
-      : `최소 ${MIN_PICK - count}명 더 선택해 주세요. (선택 순서 미세 가중치 적용)`;
+      ? "감사 준비 완료!"
+      : `최소 ${MIN_PICK - count}명 더 선택해 주세요.`;
 
     document.querySelectorAll(".student-card").forEach((card) => {
       const order = state.selectedIds.indexOf(card.dataset.id);
@@ -541,7 +541,7 @@
 
     document.getElementById("resDocCode").textContent = `SCHALE-AUDIT-${docNum}`;
     document.getElementById("resDocSubtitle").textContent =
-      `${teacherLabel} 선호 학생 정밀 감사 결과서 (우선순위 가중치 적용)`;
+      `${teacherLabel} 선호 학생 정밀 감사 결과서`;
     document.getElementById("resTeacherBadge").textContent = `감사 대상 · ${teacherLabel}`;
     document.getElementById("resStamp").textContent = result.audit.stampText;
     document.getElementById("resOverrideBadge").classList.toggle("hidden", !result.title.isSpecialOverride);

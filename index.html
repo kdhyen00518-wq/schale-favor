@@ -15,7 +15,7 @@
       <div class="brand-tag">S.C.H.A.L.E // SPECIAL AUDIT DIVISION v3</div>
       <h1 class="site-title">샬레 선생님 취향 감정서</h1>
       <p class="site-desc">
-        최애 학생을 <strong>3명 ~ 10명</strong> 선택하세요.
+        최애 학생을 <strong>3명 ~ 10명</strong> 선택하세요. <strong>먼저 고른 순서대로 약간의 가중치(1.12x → 0.88x)</strong>가 반영되어 정밀 감정서를 발급합니다.
       </p>
     </div>
   </header>
@@ -28,6 +28,18 @@
 
     <!-- 선택 화면 -->
     <section id="selectView" class="panel">
+      <!-- 닉네임 입력 바 -->
+      <div class="nickname-bar">
+        <label for="nicknameInput" class="nickname-label">감사 대상 닉네임</label>
+        <input
+          type="text"
+          id="nicknameInput"
+          maxlength="16"
+          placeholder="닉네임 입력 (선택 · 미입력 시 '선생님')"
+          autocomplete="off"
+        />
+      </div>
+
       <div class="toolbar">
         <div class="search-box">
           <input
@@ -71,7 +83,8 @@
         <div class="audit-card-head">
           <div>
             <div class="doc-code" id="resDocCode">SCHALE-AUDIT-0000</div>
-            <div class="doc-subtitle">선생님 선호 학생 정밀 감사 결과서</div>
+            <div class="doc-subtitle" id="resDocSubtitle">선생님 선호 학생 정밀 감사 결과서 (우선순위 가중치 적용)</div>
+            <div class="teacher-badge" id="resTeacherBadge">감사 대상 · 선생님</div>
           </div>
           <div class="audit-stamp" id="resStamp">검수 완료</div>
         </div>
@@ -106,9 +119,8 @@
         <!-- 발키리 교차 경보 배너 -->
         <div id="valkyrieAlertBox" class="valkyrie-alert hidden"></div>
 
-        <!-- 신장 & 가슴 사이즈 심화 계측 2단 카드 (호칭 한 마디 강조형) -->
+        <!-- 신장 & 가슴 사이즈 심화 계측 2단 카드 -->
         <div class="physical-grid">
-          <!-- 신장 계측 카드 -->
           <div class="bio-card bio-height">
             <div class="bio-top">
               <div>
@@ -124,13 +136,11 @@
               </div>
             </div>
 
-            <!-- 호칭 한 마디 스포트라이트 -->
             <div class="epithet-banner epithet-sky">
               <span class="epithet-tag">신장 판정 호칭</span>
               <p id="resHeightEpithet" class="epithet-text">-</p>
             </div>
 
-            <!-- 눈금자 포인터 게이지 -->
             <div class="ruler-wrap">
               <div class="ruler-track">
                 <div class="ruler-mid-mark" style="left: 57.3%;" title="키보토스 평균 156.5cm"></div>
@@ -149,7 +159,6 @@
             <div id="resHeightDist" class="bio-dist"></div>
           </div>
 
-          <!-- 가슴 사이즈 계측 카드 -->
           <div class="bio-card bio-bust">
             <div class="bio-top">
               <div>
@@ -165,13 +174,11 @@
               </div>
             </div>
 
-            <!-- 호칭 한 마디 스포트라이트 -->
             <div class="epithet-banner epithet-pink">
               <span class="epithet-tag tag-pink">사이즈 판정 호칭</span>
               <p id="resBustEpithet" class="epithet-text">-</p>
             </div>
 
-            <!-- 눈금자 포인터 게이지 (AA ~ L, B 이하 아담 경계 표시) -->
             <div class="ruler-wrap">
               <div class="ruler-track">
                 <div class="ruler-mid-mark mark-pink" style="left: 20.8%;" title="아담 경계 (B컵)"></div>
@@ -224,7 +231,7 @@
 
         <!-- 유우카 소견서 -->
         <div class="yuuka-box">
-          <div class="yuuka-box-head">세미나 회계 감사관 소견서</div>
+          <div class="yuuka-box-head" id="resAuditHead">세미나 회계 감사관 소견서</div>
           <p id="resAuditOpening" class="audit-opening"></p>
           <ul id="resAuditBody" class="audit-body-list"></ul>
           <p id="resAuditClosing" class="audit-closing"></p>

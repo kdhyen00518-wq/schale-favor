@@ -1,9 +1,10 @@
 /**
- * 샬레 선생님 취향 감정서 v3 - UI, 6축 레이더, 헤어 도넛 & 1080px PNG 렌더러 (app.js)
+ * 샬레 선생님 취향 감정서 v3.2 - 닉네임 지원 UI, 6축 레이더, 헤어 도넛 & 1080px PNG 렌더러 (app.js)
  */
 (() => {
   const MIN_PICK = 3;
   const MAX_PICK = 10;
+  const MAX_NICK_LEN = 16;
 
   const SCHOOL_COLORS = {
     "밀레니엄": "#2563eb",
@@ -49,7 +50,14 @@
     return SCHOOL_COLORS[school] || "#475569";
   }
 
+  function formatTeacherLabel(rawNick) {
+    const clean = String(rawNick || "").trim().slice(0, MAX_NICK_LEN);
+    if (!clean) return "선생님";
+    return clean.endsWith("선생님") ? clean : `${clean} 선생님`;
+  }
+
   const state = {
+    nickname: "",
     selectedIds: [],
     activeSchool: "전체",
     searchQuery: "",
@@ -62,6 +70,7 @@
     selectView: document.getElementById("selectView"),
     resultView: document.getElementById("resultView"),
     stickyBar: document.getElementById("stickyBar"),
+    nicknameInput: document.getElementById("nicknameInput"),
     searchInput: document.getElementById("searchInput"),
     clearSearchBtn: document.getElementById("clearSearchBtn"),
     sortSelect: document.getElementById("sortSelect"),
@@ -445,19 +454,29 @@
   }
 
   // =========================================================================
-  // 3. URL 공유 & 복원
+  // 3. URL 공유 & 복원 (?picks=...&name=...)
   // =========================================================================
-  function buildShareUrl(ids) {
+  function buildShareUrl(ids, nickname) {
     const url = new URL(window.location.href);
     url.searchParams.set("picks", ids.join(","));
+    const cleanNick = String(nickname || "").trim().slice(0, MAX_NICK_LEN);
+    if (cleanNick) url.searchParams.set("name", cleanNick);
+    else url.searchParams.delete("name");
     return url.toString();
   }
 
-  function syncUrlPicks(ids, mode = "push") {
+  function syncUrlPicks(ids, nickname, mode = "push") {
     try {
       const url = new URL(window.location.href);
-      if (ids && ids.length >= MIN_PICK) url.searchParams.set("picks", ids.join(","));
-      else url.searchParams.delete("picks");
+      if (ids && ids.length >= MIN_PICK) {
+        url.searchParams.set("picks", ids.join(","));
+        const cleanNick = String(nickname || "").trim().slice(0, MAX_NICK_LEN);
+        if (cleanNick) url.searchParams.set("name", cleanNick);
+        else url.searchParams.delete("name");
+      } else {
+        url.searchParams.delete("picks");
+        url.searchParams.delete("name");
+      }
       if (mode === "push") window.history.pushState({ view: ids ? "result" : "select" }, "", url);
       else window.history.replaceState({ view: ids ? "result" : "select" }, "", url);
     } catch { /* file:// 무시 */ }
@@ -467,12 +486,12 @@
     el.resultView.classList.add("hidden");
     el.selectView.classList.remove("hidden");
     el.stickyBar.classList.remove("hidden");
-    if (updateUrl) syncUrlPicks(null, "replace");
+    if (updateUrl) syncUrlPicks(null, "", "replace");
   }
 
   async function handleShareUrl() {
     if (state.selectedIds.length < MIN_PICK) return;
-    const shareUrl = buildShareUrl(state.selectedIds);
+    const shareUrl = buildShareUrl(state.selectedIds, state.nickname);
     try {
       await navigator.clipboard.writeText(shareUrl);
       showToast("결과 공유 링크가 클립보드에 복사되었습니다.");
@@ -483,6 +502,12 @@
 
   function restoreFromUrl() {
     const params = new URLSearchParams(window.location.search);
+    const rawName = (params.get("name") || "").trim().slice(0, MAX_NICK_LEN);
+    if (rawName) {
+      state.nickname = rawName;
+      el.nicknameInput.value = rawName;
+    }
+
     const rawPicks = params.get("picks");
     if (!rawPicks) {
       showSelectView({ updateUrl: false });
@@ -505,13 +530,19 @@
   // =========================================================================
   function runAnalysis({ syncUrl = true } = {}) {
     if (state.selectedIds.length < MIN_PICK) return;
+    state.nickname = el.nicknameInput.value.trim().slice(0, MAX_NICK_LEN);
+
     const result = TasteEngine.analyze(state.selectedIds, DB);
     state.lastResult = result;
 
+    const teacherLabel = formatTeacherLabel(state.nickname);
     const selectedStudents = state.selectedIds.map((id) => studentMap.get(id)).filter(Boolean);
     const docNum = String(result.meta.seed % 10000).padStart(4, "0");
 
     document.getElementById("resDocCode").textContent = `SCHALE-AUDIT-${docNum}`;
+    document.getElementById("resDocSubtitle").textContent =
+      `${teacherLabel} 선호 학생 정밀 감사 결과서 (우선순위 가중치 적용)`;
+    document.getElementById("resTeacherBadge").textContent = `감사 대상 · ${teacherLabel}`;
     document.getElementById("resStamp").textContent = result.audit.stampText;
     document.getElementById("resOverrideBadge").classList.toggle("hidden", !result.title.isSpecialOverride);
     document.getElementById("resMainTitle").textContent = result.title.fullTitle;
@@ -530,7 +561,7 @@
       strip.appendChild(item);
     });
 
-    // 요약 4칸 (가슴은 숫자 대신 사이즈 표기)
+    // 요약 4칸
     const hd = result.stats.heightDetail;
     const bd = result.stats.bustDetail;
     const diffSign = hd.diff >= 0 ? `+${hd.diff}cm` : `${hd.diff}cm`;
@@ -541,7 +572,7 @@
       `${result.stats.topSchool.name} (${Math.round(result.stats.topSchool.ratio * 100)}%)`;
     document.getElementById("resTopWeapon").textContent = result.stats.topWeapon;
 
-    // 발키리 교차 경보 배너 (사이즈 문자로 표기)
+    // 발키리 교차 경보 배너
     const vr = result.stats.valkyrieRisk;
     if (vr.level !== "SAFE") {
       el.valkyrieAlertBox.className = `valkyrie-alert level-${vr.level}`;
@@ -576,7 +607,7 @@
       <span class="dist-chip">장신(163~) ${hd.buckets.tall}명</span>
     `;
 
-    // 2) 가슴 사이즈 심화 카드 (AA~L, 숫자 없음)
+    // 2) 가슴 사이즈 심화 카드
     const bPct = Math.max(3, Math.min(97, ((bd.avg - 1) / 12) * 100));
     document.getElementById("resBustTier").textContent = bd.tierLabel;
     document.getElementById("resBustHero").textContent = bd.avgCupLabel;
@@ -591,7 +622,7 @@
     `;
     document.getElementById("resBustDist").innerHTML = `
       <span class="dist-chip">아담(AA~B) ${bd.buckets.petite}명</span>
-      <span class="dist-chip">슬랜더(C~E) ${bd.buckets.standard}명</span>
+      <span class="dist-chip">표준(C~E) ${bd.buckets.standard}명</span>
       <span class="dist-chip">글래머(F~H) ${bd.buckets.glamour}명</span>
       <span class="dist-chip">압도적(I~L) ${bd.buckets.mega}명</span>
     `;
@@ -630,6 +661,8 @@
     }
 
     // 유우카 소견서
+    document.getElementById("resAuditHead").textContent =
+      `세미나 회계 감사관 소견서 — 대상: ${teacherLabel}`;
     document.getElementById("resAuditOpening").textContent = result.audit.opening;
     const bodyUl = document.getElementById("resAuditBody");
     bodyUl.innerHTML = "";
@@ -643,12 +676,12 @@
     el.selectView.classList.add("hidden");
     el.stickyBar.classList.add("hidden");
     el.resultView.classList.remove("hidden");
-    if (syncUrl) syncUrlPicks(state.selectedIds, "push");
+    if (syncUrl) syncUrlPicks(state.selectedIds, state.nickname, "push");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   // =========================================================================
-  // 5. 고화질 1080px PNG 감정서 렌더러 (호칭 스포트라이트 + AA~L 사이즈 반영)
+  // 5. 고화질 1080px PNG 감정서 렌더러 (닉네임 반영)
   // =========================================================================
   function wrapTextLines(ctx, text, maxWidth) {
     const lines = [];
@@ -679,12 +712,12 @@
     const W = 1080;
     const PAD = 56;
     const CW = W - PAD * 2;
+    const teacherLabel = formatTeacherLabel(state.nickname);
 
     const loadedImgs = allowLocalImages
       ? await Promise.all(selectedStudents.map((s) => loadImageSafe(`assets/${s.id}.webp`)))
       : selectedStudents.map(() => null);
 
-    // 줄 수 사전 계측으로 동적 캔버스 높이 정확 계산
     const mCtx = document.createElement("canvas").getContext("2d");
     mCtx.font = '900 38px "Pretendard", sans-serif';
     const titleLines = wrapTextLines(mCtx, result.title.fullTitle, CW - 235);
@@ -720,7 +753,7 @@
     for (let x = 0; x < W; x += 36) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
     for (let y = 0; y < H; y += 36) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
 
-    // 상단 헤더
+    // 상단 헤더 (닉네임 반영)
     ctx.fillStyle = "#0f172a";
     ctx.fillRect(0, 0, W, 114);
     const grad = ctx.createLinearGradient(0, 114, W, 114);
@@ -732,10 +765,13 @@
     const docNum = String(result.meta.seed % 10000).padStart(4, "0");
     ctx.fillStyle = "#38bdf8";
     ctx.font = '800 17px "Pretendard", sans-serif';
-    ctx.fillText(`S.C.H.A.L.E // SPECIAL AUDIT v3 #${docNum}`, PAD, 44);
+    ctx.fillText(`S.C.H.A.L.E // SPECIAL AUDIT v3 #${docNum}  ·  대상: ${teacherLabel}`, PAD, 44);
     ctx.fillStyle = "#ffffff";
     ctx.font = '800 32px "Pretendard", sans-serif';
-    ctx.fillText("샬레 선생님 취향 정밀 감정서", PAD, 86);
+    const pngHeaderTitle = state.nickname
+      ? `${teacherLabel} 취향 정밀 감정서`
+      : "샬레 선생님 취향 정밀 감정서";
+    ctx.fillText(pngHeaderTitle, PAD, 86);
 
     // 붉은 도장
     ctx.save();
@@ -820,7 +856,7 @@
       y += 84;
     }
 
-    // 리뉴얼된 신장 & 가슴 사이즈 2단 카드 (호칭 한 마디 강조)
+    // 신장 & 가슴 사이즈 2단 카드
     const halfW = (CW - 18) / 2;
     const hd = result.stats.heightDetail;
     const bd = result.stats.bustDetail;
@@ -834,7 +870,6 @@
       ctx.fillStyle = cfg.topColor;
       ctx.fillRect(bx, y, halfW, 5);
 
-      // 좌측 코드 + 제목 / 우측 히어로 수치
       ctx.fillStyle = cfg.darkColor;
       ctx.font = '800 12px "Pretendard", sans-serif';
       ctx.fillText(cfg.code, bx + 18, y + 26);
@@ -852,7 +887,6 @@
       ctx.fillText(cfg.heroSub, bx + halfW - 18, y + 57);
       ctx.textAlign = "left";
 
-      // 호칭 한 마디 스포트라이트 박스
       const epY = y + 66;
       ctx.fillStyle = cfg.bannerBg;
       ctx.fillRect(bx + 18, epY, halfW - 36, 48);
@@ -866,7 +900,6 @@
       ctx.font = '900 18px "Pretendard", sans-serif';
       ctx.fillText(`“${cfg.epithet}”`, bx + 32, epY + 31);
 
-      // 포인터 눈금자 바
       const barY = y + 132;
       const barW = halfW - 36;
       ctx.fillStyle = "#e2e8f0";
@@ -874,12 +907,10 @@
       ctx.fillStyle = cfg.topColor;
       ctx.fillRect(bx + 18, barY, (barW * cfg.pct) / 100, 9);
 
-      // 기준선 마커
       const markX = bx + 18 + (barW * cfg.midPct) / 100;
       ctx.fillStyle = cfg.darkColor;
       ctx.fillRect(markX - 1, barY - 3, 2, 15);
 
-      // 포인터 원형 점
       const ptrX = bx + 18 + (barW * cfg.pct) / 100;
       ctx.beginPath();
       ctx.arc(ptrX, barY + 4.5, 7.5, 0, Math.PI * 2);
@@ -889,7 +920,6 @@
       ctx.lineWidth = 3;
       ctx.stroke();
 
-      // 눈금 텍스트
       ctx.fillStyle = "#64748b";
       ctx.font = '700 12px "Pretendard", sans-serif';
       cfg.ticks.forEach((tk, i) => {
@@ -899,7 +929,6 @@
       });
       ctx.textAlign = "left";
 
-      // 최소/최대 & 분포
       ctx.fillStyle = "#334155";
       ctx.font = '700 14px "Pretendard", sans-serif';
       ctx.fillText(cfg.extremesLine, bx + 18, y + 186);
@@ -942,7 +971,7 @@
       midPct: 20.8,
       ticks: ["AA", "B(아담)", "E", "H", "L"],
       extremesLine: `최소 ${bd.min.name}(${bd.min.cup})  ·  최대 ${bd.max.name}(${bd.max.cup})`,
-      distLine: `아담(AA~B) ${bd.buckets.petite} · 슬랜더(C~E) ${bd.buckets.standard} · 글래머(F~H) ${bd.buckets.glamour} · 압도적(I~L) ${bd.buckets.mega}`,
+      distLine: `아담(AA~B) ${bd.buckets.petite} · 표준(C~E) ${bd.buckets.standard} · 글래머(F~H) ${bd.buckets.glamour} · 압도적(I~L) ${bd.buckets.mega}`,
       topColor: "#ec4899",
       darkColor: "#be185d",
       bannerBg: "#fdf2f8",
@@ -1050,7 +1079,7 @@
     let ay = y + 38;
     ctx.fillStyle = "#38bdf8";
     ctx.font = '800 16px "Pretendard", sans-serif';
-    ctx.fillText("세미나 회계 감사관 소견서", PAD + 30, ay);
+    ctx.fillText(`세미나 회계 감사관 소견서 — 대상: ${teacherLabel}`, PAD + 30, ay);
     ay += 34;
     ctx.fillStyle = "#ffffff";
     ctx.font = '700 22px "Pretendard", sans-serif';
@@ -1086,7 +1115,9 @@
         dataUrl = canvas.toDataURL("image/png");
       }
       const link = document.createElement("a");
-      link.download = `schale_taste_audit_${state.lastResult.meta.seed % 10000}.png`;
+      const safeNick = state.nickname.replace(/[\\/:*?"<>|\s]+/g, "_");
+      const prefix = safeNick ? `schale_audit_${safeNick}` : "schale_taste_audit";
+      link.download = `${prefix}_${state.lastResult.meta.seed % 10000}.png`;
       link.href = dataUrl;
       link.click();
       showToast("고화질 PNG 감정서가 저장되었습니다.");
@@ -1101,10 +1132,11 @@
     const r = state.lastResult;
     const hd = r.stats.heightDetail;
     const bd = r.stats.bustDetail;
+    const teacherLabel = formatTeacherLabel(state.nickname);
     const names = state.selectedIds.map((id) => studentMap.get(id)?.name).filter(Boolean).join(", ");
     const synText = r.synergies.length ? r.synergies.map((s) => `[${s.badgeName}]`).join(" ") : "없음";
     const summary = [
-      `[샬레 선생님 취향 감정서 - ${r.audit.stampText}]`,
+      `[${teacherLabel} 취향 감정서 - ${r.audit.stampText}]`,
       `칭호: ${r.title.fullTitle}`,
       `선택 학생(${r.meta.analyzedCount}명): ${names}`,
       `신장: ${hd.avg}cm — 「${hd.epithet}」`,
@@ -1123,6 +1155,9 @@
   }
 
   // 이벤트 바인딩
+  el.nicknameInput.addEventListener("input", (e) => {
+    state.nickname = e.target.value.trim().slice(0, MAX_NICK_LEN);
+  });
   el.searchInput.addEventListener("input", (e) => {
     state.searchQuery = e.target.value;
     el.clearSearchBtn.classList.toggle("hidden", !state.searchQuery);

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>샬레 선생님 취향 감정서 | SCHALE Taste Audit</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="bg-blueprint" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand-tag">S.C.H.A.L.E // SPECIAL AUDIT DIVISION v3</div>
+      <h1 class="site-title">샬레 선생님 취향 감정서</h1>
+      <p class="site-desc">
+        최애 학생을 <strong>3명 ~ 10명</strong> 선택하세요.
+      </p>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="dbErrorBanner" class="error-banner hidden">
+      <strong>data/db.js를 찾을 수 없습니다.</strong>
+      터미널에서 <code>python upgrade_v3_bust.py</code> 후 <code>python build_db.py</code>를 실행해 주세요.
+    </div>
+
+    <!-- 선택 화면 -->
+    <section id="selectView" class="panel">
+      <div class="toolbar">
+        <div class="search-box">
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="학생 이름·초성(ㅇㅇㅋ)·동아리 검색..."
+            autocomplete="off"
+          />
+          <button type="button" id="clearSearchBtn" class="icon-btn hidden" aria-label="검색어 지우기">×</button>
+        </div>
+
+        <div class="toolbar-actions">
+          <select id="sortSelect" aria-label="정렬 기준">
+            <option value="default">등록순</option>
+            <option value="name">이름순</option>
+            <option value="height_asc">신장 낮은순</option>
+            <option value="height_desc">신장 높은순</option>
+          </select>
+          <button type="button" id="randomPickBtn" class="btn-outline">랜덤 5명</button>
+          <button type="button" id="resetPickBtn" class="btn-outline">초기화</button>
+        </div>
+      </div>
+
+      <div id="schoolFilters" class="filter-chips" role="tablist" aria-label="학원 필터"></div>
+      <div id="studentGrid" class="student-grid"></div>
+      <p id="emptyGridMsg" class="empty-msg hidden">검색 조건에 맞는 학생이 없습니다.</p>
+    </section>
+
+    <!-- 결과 감정서 화면 -->
+    <section id="resultView" class="result-view hidden">
+      <div class="result-actions-top">
+        <button type="button" id="backToSelectBtn" class="btn-outline">← 학생 다시 고르기</button>
+        <div class="result-export-btns">
+          <button type="button" id="shareUrlBtn" class="btn-outline">결과 링크 복사</button>
+          <button type="button" id="copyTextBtn" class="btn-outline">텍스트 복사</button>
+          <button type="button" id="downloadPngBtn" class="btn-primary">고화질 PNG 저장</button>
+        </div>
+      </div>
+
+      <article class="audit-card">
+        <div class="audit-card-head">
+          <div>
+            <div class="doc-code" id="resDocCode">SCHALE-AUDIT-0000</div>
+            <div class="doc-subtitle">선생님 선호 학생 정밀 감사 결과서</div>
+          </div>
+          <div class="audit-stamp" id="resStamp">검수 완료</div>
+        </div>
+
+        <div class="title-block">
+          <span id="resOverrideBadge" class="override-badge hidden">SPECIAL OVERRIDE</span>
+          <h2 id="resMainTitle" class="res-main-title"></h2>
+        </div>
+
+        <div id="resSelectedStrip" class="selected-strip"></div>
+
+        <!-- 핵심 요약 4칸 -->
+        <div class="stats-grid">
+          <div class="stat-box">
+            <span class="stat-label">가중 평균 신장</span>
+            <strong class="stat-value" id="resAvgHeight">-</strong>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">평균 선호 사이즈</span>
+            <strong class="stat-value" id="resAvgBust">-</strong>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">주력 학원</span>
+            <strong class="stat-value" id="resTopSchool">-</strong>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">선호 화기</span>
+            <strong class="stat-value" id="resTopWeapon">-</strong>
+          </div>
+        </div>
+
+        <!-- 발키리 교차 경보 배너 -->
+        <div id="valkyrieAlertBox" class="valkyrie-alert hidden"></div>
+
+        <!-- 신장 & 가슴 사이즈 심화 계측 2단 카드 (호칭 한 마디 강조형) -->
+        <div class="physical-grid">
+          <!-- 신장 계측 카드 -->
+          <div class="bio-card bio-height">
+            <div class="bio-top">
+              <div>
+                <div class="bio-code">BIOMETRIC // HEIGHT</div>
+                <div class="bio-tier-row">
+                  <span class="bio-title">신장 정밀 계측</span>
+                  <span id="resHeightTier" class="metric-chip">-</span>
+                </div>
+              </div>
+              <div class="bio-hero">
+                <strong id="resHeightHero" class="bio-hero-val">-</strong>
+                <span id="resHeightDiff" class="bio-hero-sub">-</span>
+              </div>
+            </div>
+
+            <!-- 호칭 한 마디 스포트라이트 -->
+            <div class="epithet-banner epithet-sky">
+              <span class="epithet-tag">신장 판정 호칭</span>
+              <p id="resHeightEpithet" class="epithet-text">-</p>
+            </div>
+
+            <!-- 눈금자 포인터 게이지 -->
+            <div class="ruler-wrap">
+              <div class="ruler-track">
+                <div class="ruler-mid-mark" style="left: 57.3%;" title="키보토스 평균 156.5cm"></div>
+                <div id="resHeightGaugeFill" class="ruler-fill ruler-fill-sky"></div>
+                <div id="resHeightPointer" class="ruler-pointer pointer-sky"></div>
+              </div>
+              <div class="ruler-ticks">
+                <span>125cm</span>
+                <span>평균 156.5cm</span>
+                <span>180cm</span>
+              </div>
+            </div>
+
+            <p id="resHeightComment" class="bio-comment"></p>
+            <div id="resHeightExtremes" class="bio-extremes"></div>
+            <div id="resHeightDist" class="bio-dist"></div>
+          </div>
+
+          <!-- 가슴 사이즈 계측 카드 -->
+          <div class="bio-card bio-bust">
+            <div class="bio-top">
+              <div>
+                <div class="bio-code code-pink">BIOMETRIC // SIZE (AA–L)</div>
+                <div class="bio-tier-row">
+                  <span class="bio-title">선호 사이즈 심화 분석</span>
+                  <span id="resBustTier" class="metric-chip chip-pink">-</span>
+                </div>
+              </div>
+              <div class="bio-hero">
+                <strong id="resBustHero" class="bio-hero-val val-pink">-</strong>
+                <span id="resBustConsistency" class="bio-hero-sub">-</span>
+              </div>
+            </div>
+
+            <!-- 호칭 한 마디 스포트라이트 -->
+            <div class="epithet-banner epithet-pink">
+              <span class="epithet-tag tag-pink">사이즈 판정 호칭</span>
+              <p id="resBustEpithet" class="epithet-text">-</p>
+            </div>
+
+            <!-- 눈금자 포인터 게이지 (AA ~ L, B 이하 아담 경계 표시) -->
+            <div class="ruler-wrap">
+              <div class="ruler-track">
+                <div class="ruler-mid-mark mark-pink" style="left: 20.8%;" title="아담 경계 (B컵)"></div>
+                <div id="resBustGaugeFill" class="ruler-fill ruler-fill-pink"></div>
+                <div id="resBustPointer" class="ruler-pointer pointer-pink"></div>
+              </div>
+              <div class="ruler-ticks">
+                <span>AA</span>
+                <span>B(아담)</span>
+                <span>E</span>
+                <span>H</span>
+                <span>L</span>
+              </div>
+            </div>
+
+            <p id="resBustComment" class="bio-comment"></p>
+            <div id="resBustExtremes" class="bio-extremes"></div>
+            <div id="resBustDist" class="bio-dist"></div>
+          </div>
+        </div>
+
+        <!-- 시각화 2단: 좌측 6축 레이더 / 우측 선호 헤어 컬러 도넛 -->
+        <div class="charts-grid">
+          <div class="chart-panel">
+            <h3 class="section-label">6축 성향 정밀 계측 (집착 · 순애 분리)</h3>
+            <canvas id="radarCanvas" width="380" height="320"></canvas>
+          </div>
+
+          <div class="chart-panel">
+            <h3 class="section-label">선호 헤어 컬러 분포</h3>
+            <div class="donut-wrap">
+              <canvas id="hairDonutCanvas" width="220" height="220"></canvas>
+              <div id="hairLegend" class="hair-legend"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 키워드 & 히든 시너지 -->
+        <div class="tags-synergy-grid">
+          <div>
+            <h3 class="section-label">검출된 핵심 취향 키워드</h3>
+            <div id="resTopTags" class="top-tags-list"></div>
+          </div>
+
+          <div>
+            <h3 class="section-label">발동된 히든 시너지</h3>
+            <div id="resSynergies" class="synergy-list"></div>
+          </div>
+        </div>
+
+        <!-- 유우카 소견서 -->
+        <div class="yuuka-box">
+          <div class="yuuka-box-head">세미나 회계 감사관 소견서</div>
+          <p id="resAuditOpening" class="audit-opening"></p>
+          <ul id="resAuditBody" class="audit-body-list"></ul>
+          <p id="resAuditClosing" class="audit-closing"></p>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <footer id="stickyBar" class="sticky-bar">
+    <div class="sticky-inner">
+      <div class="sticky-status">
+        <div class="sticky-meta">
+          <span class="sticky-count">선택 인원 <strong id="selectedCount">0</strong> / 10명</span>
+          <span id="stickyHint" class="sticky-hint">최소 3명 선택 시 감정 가능 (선택 순서 미세 가중치 적용)</span>
+        </div>
+        <div class="progress-track" aria-hidden="true">
+          <div id="progressFill" class="progress-fill"></div>
+        </div>
+      </div>
+      <button type="button" id="analyzeBtn" class="btn-primary btn-analyze" disabled>감정서 발급</button>
+    </div>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="data/db.js"></script>
+  <script src="engine.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

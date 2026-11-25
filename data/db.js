@@ -834,7 +834,7 @@ window.TASTE_DB = {
       "school": "밀레니엄",
       "club": "세미나",
       "height": 171,
-      "bust": 12,
+      "bust": 10,
       "weapon": "HG",
       "hairColor": "검정",
       "tags": [
@@ -863,7 +863,7 @@ window.TASTE_DB = {
       "school": "밀레니엄",
       "club": "게임개발부",
       "height": 152,
-      "bust": 3,
+      "bust": 2,
       "weapon": "RG",
       "hairColor": "검정",
       "tags": [
@@ -942,7 +942,7 @@ window.TASTE_DB = {
       "school": "밀레니엄",
       "club": "게임개발부",
       "height": 150,
-      "bust": 1,
+      "bust": 3,
       "weapon": "GL",
       "hairColor": "빨강",
       "tags": [
@@ -1518,7 +1518,7 @@ window.TASTE_DB = {
       "school": "트리니티",
       "club": "방과후 디저트부",
       "height": 152,
-      "bust": 1,
+      "bust": 2,
       "weapon": "SMG",
       "hairColor": "분홍",
       "tags": [
@@ -2021,7 +2021,7 @@ window.TASTE_DB = {
       "school": "붉은겨울",
       "club": "지식해방전선",
       "height": 137,
-      "bust": 2,
+      "bust": 5,
       "weapon": "HG",
       "hairColor": "녹색",
       "tags": [
@@ -2689,7 +2689,7 @@ window.TASTE_DB = {
       "school": "와일드헌트",
       "club": "특수교역부 (5동 402호)",
       "height": 173,
-      "bust": 8,
+      "bust": 5,
       "weapon": "HG",
       "hairColor": "은발",
       "tags": [
@@ -2891,7 +2891,7 @@ window.TASTE_DB = {
       "school": "SRT",
       "club": "FOX 소대",
       "height": 160,
-      "bust": 1,
+      "bust": 2,
       "weapon": "SG",
       "hairColor": "분홍",
       "tags": [
@@ -3023,7 +3023,7 @@ window.TASTE_DB = {
       "school": "붉은겨울",
       "club": "183호 특별반",
       "height": 165,
-      "bust": 5,
+      "bust": 10,
       "weapon": "HG",
       "hairColor": "은발",
       "tags": [
@@ -4136,7 +4136,7 @@ window.TASTE_DB = {
       "school": "붉은겨울",
       "club": "출판부",
       "height": 144,
-      "bust": 3,
+      "bust": 5,
       "weapon": "HG",
       "hairColor": "갈색",
       "tags": [
@@ -4202,7 +4202,7 @@ window.TASTE_DB = {
       "school": "붉은겨울",
       "club": "183호 특별반",
       "height": 165,
-      "bust": 5,
+      "bust": 10,
       "weapon": "HG",
       "hairColor": "은발",
       "tags": [
@@ -4334,7 +4334,7 @@ window.TASTE_DB = {
       "school": "밀레니엄",
       "club": "엔지니어부",
       "height": 162,
-      "bust": 6,
+      "bust": 5,
       "weapon": "SMG",
       "hairColor": "보라",
       "tags": [
@@ -4466,7 +4466,7 @@ window.TASTE_DB = {
       "school": "게헨나",
       "club": "급양부",
       "height": 170,
-      "bust": 11,
+      "bust": 10,
       "weapon": "SG",
       "hairColor": "분홍",
       "tags": [

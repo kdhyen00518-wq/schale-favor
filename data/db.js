@@ -1947,7 +1947,7 @@ window.TASTE_DB = {
           "power": 1
         }
       ],
-      "personalMemo": "선생님!!!!! 아침 드셨습니까!!!!!!!"
+      "personalMemo": "자칭 슈퍼스타의 도전장 때문에 샬레 우편함이 매일 넘쳐나고 있습니다."
     },
     {
       "id": "rumi",
